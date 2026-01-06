@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Sistem Pakar Diagnosa Penyakit Menular</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+body{
+    background: linear-gradient(120deg,#74ebd5,#acb6e5);
+    min-height:100vh;
+}
+.card{
+    border-radius:16px;
+}
+.gejala-box{
+    max-height:300px;
+    overflow-y:auto;
+    background:#f8f9fa;
+    padding:10px;
+    border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+<div class="container mt-4">
+<div class="card shadow p-4">
+
+<h3 class="text-center mb-3">🩺 Sistem Pakar Diagnosa Penyakit Menular</h3>
+
+<!-- NAMA PASIEN -->
+<label class="fw-bold">Nama Pasien</label>
+<input type="text" id="nama" class="form-control mb-3" placeholder="Masukkan nama pasien">
+
+<!-- GEJALA -->
+<h5 class="mt-2">Pilih Gejala:</h5>
+<div class="gejala-box row" id="gejala"></div>
+
+<button onclick="diagnosa()" class="btn btn-primary w-100 mt-3">
+🔍 Proses Diagnosa
+</button>
+
+<hr>
+<div id="hasil"></div>
+
+</div>
+</div>
+
+<script>
+// ================= DATA GEJALA =================
+const daftarGejala = [
+"Demam","Pilek","Batuk","Batuk Kering","Nyeri Kepala","Nyeri Otot","Mual","Muntah",
+"Menggigil","Lemas","Ruam Kulit","Gatal","Sesak Nafas","Sakit Menelan","Nafsu Makan Turun",
+"Berat Badan Turun","Diare","Gangguan Pencernaan","Kejang","Leher Kaku",
+"Mata Berair","Mata Merah","Hidung Tersumbat","Bersin","Pembengkakan",
+"Pembengkakan Kelenjar","Pembengkakan Kelopak Mata","Bintik Kuning",
+"Luka Lecet","Bintik Pecah","Bercak Putih Mulut","Bibir Biru"
+];
+
+// tampilkan checkbox
+let ghtml="";
+daftarGejala.forEach(g=>{
+    ghtml+=`
+    <div class="col-md-4">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="${g}">
+            <label class="form-check-label">${g}</label>
+        </div>
+    </div>`;
+});
+document.getElementById("gejala").innerHTML=ghtml;
+
+// ================= BASIS PENGETAHUAN =================
+const penyakit = [
+{nama:"Influenza", gejala:["Demam","Pilek","Batuk","Bersin"], obat:"Ibuprofen", aturan:"3x sehari setelah makan"},
+{nama:"DBD", gejala:["Demam","Nyeri Otot","Mual","Muntah"], obat:"Trolit", aturan:"2x sehari"},
+{nama:"Pneumonia", gejala:["Demam","Batuk","Sesak Nafas"], obat:"Penisilin", aturan:"3x sehari"},
+{nama:"Tuberkulosis", gejala:["Batuk","Berat Badan Turun","Lemas"], obat:"Isoniazid", aturan:"Sesuai resep dokter"},
+{nama:"Cacar Air", gejala:["Demam","Ruam Kulit","Nyeri Otot"], obat:"Acyclovir", aturan:"3x sehari"},
+{nama:"Tipes", gejala:["Demam","Nyeri Kepala","Menggigil"], obat:"Ciprofloxacin", aturan:"2x sehari"},
+{nama:"Rubella", gejala:["Demam","Pilek","Ruam Kulit"], obat:"Analgesik", aturan:"2x sehari"},
+{nama:"Cacingan", gejala:["Gatal","Berat Badan Turun","Lemas"], obat:"Combatrin", aturan:"1x minum"},
+{nama:"Malaria", gejala:["Demam","Menggigil","Nyeri Kepala"], obat:"Doxycycline", aturan:"2x sehari"},
+{nama:"Chikungunya", gejala:["Demam","Nyeri Otot","Pembengkakan"], obat:"Naproxen", aturan:"2x sehari"},
+{nama:"Tetanus", gejala:["Kejang","Sakit Menelan","Demam"], obat:"Metronidazol", aturan:"RS"},
+{nama:"Scabies", gejala:["Gatal","Ruam Kulit"], obat:"Scabimite", aturan:"1x oles malam"},
+{nama:"Kutu Air", gejala:["Gatal","Luka Lecet"], obat:"Kalpanax", aturan:"2x oles"},
+{nama:"Kurap", gejala:["Gatal","Ruam Kulit"], obat:"Fungiderm", aturan:"2x oles"},
+{nama:"Sinusitis", gejala:["Nyeri Kepala","Pilek","Hidung Tersumbat"], obat:"Iliadin", aturan:"2x"},
+{nama:"Gondongan", gejala:["Demam","Pembengkakan","Sakit Menelan"], obat:"Paracetamol", aturan:"3x"},
+{nama:"Roseola", gejala:["Demam","Pilek","Batuk"], obat:"Ibuprofen", aturan:"2x"},
+{nama:"HFMD", gejala:["Demam","Ruam Kulit","Sakit Menelan"], obat:"Asetaminofen", aturan:"3x"},
+{nama:"Campak", gejala:["Demam","Batuk","Ruam Kulit"], obat:"Paracetamol", aturan:"3x"},
+{nama:"ISPA", gejala:["Batuk","Sesak Nafas","Demam"], obat:"Amoxicillin", aturan:"3x"},
+{nama:"Meningitis", gejala:["Demam","Kejang","Leher Kaku"], obat:"Ampicillin", aturan:"IV"},
+{nama:"Typhoid", gejala:["Demam","Diare","Lemas"], obat:"Azithromycin", aturan:"2x"},
+{nama:"MERS", gejala:["Demam","Sesak Nafas","Diare"], obat:"Ribavirin", aturan:"RS"},
+{nama:"Omicron", gejala:["Demam","Pilek","Batuk"], obat:"Paracetamol", aturan:"3x"},
+{nama:"Ebola", gejala:["Demam","Muntah","Diare"], obat:"Inmazeb", aturan:"RS"},
+{nama:"Cacar Monyet", gejala:["Demam","Ruam Kulit","Nyeri Otot"], obat:"Paracetamol", aturan:"3x"},
+{nama:"Difteria", gejala:["Demam","Sakit Menelan","Sesak Nafas"], obat:"Antitoksin", aturan:"RS"},
+{nama:"Impetigo", gejala:["Bintik Kuning","Luka Lecet"], obat:"Mupirocin", aturan:"2x oles"}
+];
+
+// ================= PROSES DIAGNOSA =================
+function diagnosa(){
+let nama=document.getElementById("nama").value;
+let dipilih=[];
+document.querySelectorAll("input[type=checkbox]:checked").forEach(c=>dipilih.push(c.value));
+
+let terbaik=null, skorMax=0;
+
+penyakit.forEach(p=>{
+    let cocok=p.gejala.filter(g=>dipilih.includes(g)).length;
+    if(cocok>skorMax){
+        skorMax=cocok;
+        terbaik=p;
+    }
+});
+
+if(!terbaik || skorMax===0){
+document.getElementById("hasil").innerHTML=
+`<div class="alert alert-warning">Penyakit tidak teridentifikasi</div>`;
+return;
+}
+
+document.getElementById("hasil").innerHTML=`
+<div class="alert alert-success" id="laporan">
+<h5>📋 Hasil Diagnosa</h5>
+<b>Nama Pasien:</b> ${nama}<br>
+<b>Penyakit:</b> ${terbaik.nama}<br>
+<b>Rekomendasi Obat:</b> ${terbaik.obat}<br>
+<b>Aturan Pakai:</b> ${terbaik.aturan}<br>
+<b>Kecocokan Gejala:</b> ${skorMax} gejala
+</div>
+<button onclick="downloadTXT()" class="btn btn-success w-100 mt-2">
+⬇️ Download Hasil Diagnosa
+</button>`;
+}
+
+// ================= DOWNLOAD TXT =================
+function downloadTXT(){
+let text=document.getElementById("laporan").innerText;
+let blob=new Blob([text],{type:"text/plain"});
+let a=document.createElement("a");
+a.href=URL.createObjectURL(blob);
+a.download="hasil_diagnosa.txt";
+a.click();
+}
+</script>
+
+</body>
+</html>
